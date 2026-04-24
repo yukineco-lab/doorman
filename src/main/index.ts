@@ -24,7 +24,7 @@ function createWindow(): void {
     minHeight: 500,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#1b1c1f',
+    backgroundColor: '#f3e9d6',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: preloadPath,

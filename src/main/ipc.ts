@@ -29,7 +29,7 @@ export function registerIpc(): void {
 
   protocol.handle('doorman-icon', (request) => {
     const url = new URL(request.url)
-    const filename = decodeURIComponent(url.hostname + url.pathname).replace(/^\/+/, '')
+    const filename = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
     const safe = filename.replace(/[\\/]/g, '')
     return net.fetch(pathToFileURL(iconPath(safe)).toString())
   })
