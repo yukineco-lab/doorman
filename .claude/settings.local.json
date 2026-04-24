@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(git --version)",
+      "Bash(where winget *)",
+      "Bash(winget --version)",
+      "Bash(winget install *)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/nodejs\")",
+      "Bash(npm create *)",
+      "Bash(npx --yes @quick-start/create-electron@latest doorman-app --template react-ts --skip)",
+      "Bash(shopt -s dotglob)",
+      "Bash(mv doorman-app/* .)",
+      "Bash(rmdir doorman-app *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Read(//c/work/家計簿/加藤家/画像/ドアマン/**)",
+      "Bash(cp \"C:/work/家計簿/加藤家/画像/ドアマン/dooman.png\" \"C:/work/doorman/build/icon.png\")",
+      "Bash(cp \"C:/work/家計簿/加藤家/画像/ドアマン/dooman.png\" \"C:/work/doorman/resources/icon.png\")",
+      "Bash(powershell.exe -NoProfile -Command '$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut\\(\"$env:USERPROFILE\\\\Desktop\\\\Doorman.lnk\"\\); $Shortcut.TargetPath = '\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked\\\\Doorman.exe'\\\\''; $Shortcut.IconLocation = '\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked\\\\Doorman.exe,0'\\\\''; $Shortcut.WorkingDirectory = '\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked'\\\\''; $Shortcut.Description = '\\\\''Doorman - Bookmark Manager'\\\\''; $Shortcut.Save\\(\\); Write-Host '\\\\''Shortcut created'\\\\''')",
+      "Bash(cp \"C:/work/家計簿/加藤家/画像/ドアマン/dooman.png\" build/icon.png)",
+      "Bash(node scripts/make-icons.mjs)",
+      "Bash(rm -f \"C:/Users/kato_/Desktop/Doorman.lnk\")",
+      "Bash(powershell.exe -NoProfile -Command '$W=New-Object -ComObject WScript.Shell; $S=$W.CreateShortcut\\(\"$env:USERPROFILE\\\\Desktop\\\\Doorman.lnk\"\\); $S.TargetPath='\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked\\\\Doorman.exe'\\\\''; $S.IconLocation='\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked\\\\Doorman.exe,0'\\\\''; $S.WorkingDirectory='\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked'\\\\''; $S.Description='\\\\''Doorman'\\\\''; $S.Save\\(\\); ie4uinit.exe -show; Write-Host '\\\\''done'\\\\''')",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh --version)",
+      "Bash(gh auth *)"
+    ]
+  }
+}
