@@ -4,6 +4,7 @@ import { Sidebar, type SelectionKey } from './components/Sidebar'
 import { BookmarkList } from './components/BookmarkList'
 import { BookmarkModal } from './components/BookmarkModal'
 import { FolderModal } from './components/FolderModal'
+import { ImportModal } from './components/ImportModal'
 import { IconClose, IconPlus } from './components/Icons'
 
 function App(): JSX.Element {
@@ -18,6 +19,7 @@ function App(): JSX.Element {
   const [folderModal, setFolderModal] = useState<
     { mode: 'create' } | { mode: 'edit'; folder: Folder } | null
   >(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const reload = async (): Promise<void> => {
     const [fs, bs] = await Promise.all([window.api.listFolders(), window.api.listBookmarks()])
@@ -137,20 +139,9 @@ function App(): JSX.Element {
     }
   }
 
-  const importData = async (): Promise<void> => {
-    const choice = prompt(
-      'インポートモードを入力してください:\n  replace = 既存データを置き換え\n  merge = 既存に追加',
-      'merge'
-    )
-    if (choice !== 'replace' && choice !== 'merge') return
-    if (
-      choice === 'replace' &&
-      !confirm('既存のフォルダ・ブックマーク・アイコンをすべて削除して置き換えます。よろしいですか?')
-    ) {
-      return
-    }
+  const runImport = async (mode: 'replace' | 'merge'): Promise<void> => {
     try {
-      const result = await window.api.importFromFile(choice)
+      const result = await window.api.importFromFile(mode)
       if (result) {
         alert(
           `インポートしました\nフォルダ: ${result.folders} 件\nブックマーク: ${result.bookmarks} 件`
@@ -176,7 +167,7 @@ function App(): JSX.Element {
         onDeleteFolder={deleteFolder}
         onReorder={reorderFolders}
         onExport={exportData}
-        onImport={importData}
+        onImport={() => setImportOpen(true)}
       />
       <main className="main">
         <div className="main__header">
@@ -240,6 +231,9 @@ function App(): JSX.Element {
           onSave={saveFolder}
           onClose={() => setFolderModal(null)}
         />
+      )}
+      {importOpen && (
+        <ImportModal onChoose={runImport} onClose={() => setImportOpen(false)} />
       )}
     </div>
   )
