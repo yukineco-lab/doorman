@@ -31,7 +31,12 @@ const api: DoormanAPI = {
     const base = `doorman-icon://local/${encodeURIComponent(filename)}`
     return version ? `${base}?v=${version}` : base
   },
-  dataDir: () => ipcRenderer.invoke('app:dataDir')
+  dataDir: () => ipcRenderer.invoke('app:dataDir'),
+
+  fetchPageMeta: (url: string) => ipcRenderer.invoke('app:fetchPageMeta', url),
+  exportToFile: () => ipcRenderer.invoke('app:exportToFile'),
+  importFromFile: (mode: 'replace' | 'merge') =>
+    ipcRenderer.invoke('app:importFromFile', mode)
 }
 
 console.log('[doorman preload] loading, contextIsolated =', process.contextIsolated)

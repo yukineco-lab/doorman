@@ -30,6 +30,8 @@ interface Props {
   onEditFolder: (folder: Folder) => void
   onDeleteFolder: (folder: Folder) => void
   onReorder: (folders: Folder[]) => void
+  onExport: () => void
+  onImport: () => void
 }
 
 export function Sidebar({
@@ -42,7 +44,9 @@ export function Sidebar({
   onCreateFolder,
   onEditFolder,
   onDeleteFolder,
-  onReorder
+  onReorder,
+  onExport,
+  onImport
 }: Props): JSX.Element {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -94,6 +98,14 @@ export function Sidebar({
             ))}
           </SortableContext>
         </DndContext>
+      </div>
+      <div className="sidebar__footer">
+        <button className="btn btn--ghost" onClick={onExport} title="JSON ファイルにエクスポート">
+          エクスポート
+        </button>
+        <button className="btn btn--ghost" onClick={onImport} title="JSON ファイルからインポート">
+          インポート
+        </button>
       </div>
     </aside>
   )

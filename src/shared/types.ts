@@ -15,12 +15,18 @@ export interface Bookmark {
   displayOrder: number
 }
 
+export type IconChange =
+  | { kind: 'keep' }
+  | { kind: 'remove' }
+  | { kind: 'file'; path: string }
+  | { kind: 'dataUrl'; dataUrl: string }
+
 export interface BookmarkInput {
   folderId: string | null
   name: string
   url: string
   memo: string
-  iconSourcePath?: string | null
+  iconChange: IconChange
 }
 
 export interface FolderInput {
@@ -30,6 +36,24 @@ export interface FolderInput {
 export interface ReorderItem {
   id: string
   displayOrder: number
+}
+
+export interface PageMeta {
+  title: string | null
+  iconDataUrl: string | null
+  iconExt: string | null
+}
+
+export interface ExportData {
+  version: 1
+  exportedAt: string
+  folders: Folder[]
+  bookmarks: Array<Bookmark & { iconDataUrl?: string | null }>
+}
+
+export interface ImportResult {
+  folders: number
+  bookmarks: number
 }
 
 export interface DoormanAPI {
@@ -50,4 +74,8 @@ export interface DoormanAPI {
   pickIconFile: () => Promise<{ path: string; dataUrl: string } | null>
   iconUrl: (filename: string, version?: number | null) => string
   dataDir: () => Promise<string>
+
+  fetchPageMeta: (url: string) => Promise<PageMeta>
+  exportToFile: () => Promise<string | null>
+  importFromFile: (mode: 'replace' | 'merge') => Promise<ImportResult | null>
 }

@@ -4,12 +4,13 @@ import { Sidebar, type SelectionKey } from './components/Sidebar'
 import { BookmarkList } from './components/BookmarkList'
 import { BookmarkModal } from './components/BookmarkModal'
 import { FolderModal } from './components/FolderModal'
-import { IconPlus } from './components/Icons'
+import { IconClose, IconPlus } from './components/Icons'
 
 function App(): JSX.Element {
   const [folders, setFolders] = useState<Folder[]>([])
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [selection, setSelection] = useState<SelectionKey>('all')
+  const [search, setSearch] = useState('')
 
   const [bookmarkModal, setBookmarkModal] = useState<
     { mode: 'create' } | { mode: 'edit'; bookmark: Bookmark } | null
@@ -41,19 +42,32 @@ function App(): JSX.Element {
     [bookmarks]
   )
 
+  const searchLower = search.trim().toLowerCase()
+  const isSearching = searchLower.length > 0
+
   const visibleBookmarks = useMemo(() => {
     let list: Bookmark[]
-    if (selection === 'all') list = bookmarks
+    if (isSearching) {
+      // 検索時はフォルダ選択を無視して全体検索
+      list = bookmarks.filter((b) => {
+        return (
+          b.name.toLowerCase().includes(searchLower) ||
+          b.url.toLowerCase().includes(searchLower) ||
+          b.memo.toLowerCase().includes(searchLower)
+        )
+      })
+    } else if (selection === 'all') list = bookmarks
     else if (selection === 'top') list = bookmarks.filter((b) => b.folderId === null)
     else list = bookmarks.filter((b) => b.folderId === selection)
     return [...list].sort((a, b) => a.displayOrder - b.displayOrder)
-  }, [bookmarks, selection])
+  }, [bookmarks, selection, isSearching, searchLower])
 
   const currentTitle = useMemo(() => {
+    if (isSearching) return `検索: "${search.trim()}"`
     if (selection === 'all') return 'すべてのブックマーク'
     if (selection === 'top') return 'トップ'
     return folders.find((f) => f.id === selection)?.name ?? ''
-  }, [selection, folders])
+  }, [selection, folders, isSearching, search])
 
   const defaultFolderId = selection === 'all' || selection === 'top' ? null : selection
 
@@ -114,6 +128,40 @@ function App(): JSX.Element {
     await window.api.reorderFolders(newOrders)
   }
 
+  const exportData = async (): Promise<void> => {
+    try {
+      const path = await window.api.exportToFile()
+      if (path) alert(`エクスポートしました:\n${path}`)
+    } catch (e) {
+      alert('エクスポートに失敗しました: ' + (e as Error).message)
+    }
+  }
+
+  const importData = async (): Promise<void> => {
+    const choice = prompt(
+      'インポートモードを入力してください:\n  replace = 既存データを置き換え\n  merge = 既存に追加',
+      'merge'
+    )
+    if (choice !== 'replace' && choice !== 'merge') return
+    if (
+      choice === 'replace' &&
+      !confirm('既存のフォルダ・ブックマーク・アイコンをすべて削除して置き換えます。よろしいですか?')
+    ) {
+      return
+    }
+    try {
+      const result = await window.api.importFromFile(choice)
+      if (result) {
+        alert(
+          `インポートしました\nフォルダ: ${result.folders} 件\nブックマーク: ${result.bookmarks} 件`
+        )
+        await reload()
+      }
+    } catch (e) {
+      alert('インポートに失敗しました: ' + (e as Error).message)
+    }
+  }
+
   return (
     <div className="app">
       <Sidebar
@@ -127,11 +175,30 @@ function App(): JSX.Element {
         onEditFolder={(f) => setFolderModal({ mode: 'edit', folder: f })}
         onDeleteFolder={deleteFolder}
         onReorder={reorderFolders}
+        onExport={exportData}
+        onImport={importData}
       />
       <main className="main">
         <div className="main__header">
           <h1 className="main__title">{currentTitle}</h1>
           <div className="main__actions">
+            <div className="search">
+              <input
+                className="search__input"
+                placeholder="検索 (名前・URL・メモ)"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  className="search__clear"
+                  onClick={() => setSearch('')}
+                  title="クリア"
+                >
+                  <IconClose />
+                </button>
+              )}
+            </div>
             <button
               className="btn btn--primary"
               onClick={() => setBookmarkModal({ mode: 'create' })}

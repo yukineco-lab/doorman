@@ -4,7 +4,9 @@ import { readFileSync, statSync } from 'fs'
 import { extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import { bookmarkRepo, folderRepo, getDataDir, initDb } from './db'
-import { deleteIcon, iconPath, importIcon } from './icons'
+import { deleteIcon, iconPath, importIcon, importIconFromDataUrl } from './icons'
+import { fetchPageMeta } from './pageMeta'
+import { exportToFile, importFromFile } from './portability'
 import type { Bookmark, BookmarkInput, FolderInput, ReorderItem } from '@shared/types'
 
 function withIconMtime(b: Bookmark): Bookmark {
@@ -63,8 +65,10 @@ export function registerIpc(): void {
   ipcMain.handle('bookmarks:create', (_e, input: BookmarkInput) => {
     const id = uuidv4()
     let iconFilename: string | null = null
-    if (input.iconSourcePath) {
-      iconFilename = importIcon(input.iconSourcePath, id)
+    if (input.iconChange.kind === 'file') {
+      iconFilename = importIcon(input.iconChange.path, id)
+    } else if (input.iconChange.kind === 'dataUrl') {
+      iconFilename = importIconFromDataUrl(input.iconChange.dataUrl, id)
     }
     const created = bookmarkRepo.create(
       id,
@@ -80,13 +84,20 @@ export function registerIpc(): void {
     const existing = bookmarkRepo.get(id)
     if (!existing) throw new Error('Bookmark not found')
     let iconFilename = existing.iconFilename
-    if (input.iconSourcePath) {
-      deleteIcon(existing.iconFilename)
-      iconFilename = importIcon(input.iconSourcePath, id)
-    } else if (input.iconSourcePath === null) {
-      // explicit removal
-      deleteIcon(existing.iconFilename)
-      iconFilename = null
+    switch (input.iconChange.kind) {
+      case 'file':
+        deleteIcon(existing.iconFilename)
+        iconFilename = importIcon(input.iconChange.path, id)
+        break
+      case 'dataUrl':
+        deleteIcon(existing.iconFilename)
+        iconFilename = importIconFromDataUrl(input.iconChange.dataUrl, id)
+        break
+      case 'remove':
+        deleteIcon(existing.iconFilename)
+        iconFilename = null
+        break
+      // 'keep' falls through
     }
     const updated = bookmarkRepo.update(
       id,
@@ -134,4 +145,16 @@ export function registerIpc(): void {
     }
   })
   ipcMain.handle('app:dataDir', () => getDataDir())
+
+  ipcMain.handle('app:fetchPageMeta', (_e, url: string) => fetchPageMeta(url))
+  ipcMain.handle('app:exportToFile', (event) => {
+    const win =
+      BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getFocusedWindow()
+    return exportToFile(win)
+  })
+  ipcMain.handle('app:importFromFile', (event, mode: 'replace' | 'merge') => {
+    const win =
+      BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getFocusedWindow()
+    return importFromFile(win, mode)
+  })
 }
