@@ -107,27 +107,53 @@ export async function importFromFile(
     for (const f of folderRepo.list()) folderRepo.delete(f.id)
   }
 
+  // Map old (export-side) folder id -> new (db) folder id
   const folderIdMap = new Map<string, string>()
-  for (const f of parsed.folders) {
-    let newId = f.id
-    if (mode === 'merge') {
-      // Always create new id to avoid collisions
-      newId = uuidv4()
+
+  if (mode === 'replace') {
+    // Recreate every folder with a fresh id
+    for (const f of parsed.folders) {
+      const newId = uuidv4()
+      folderRepo.create(newId, f.name)
+      folderIdMap.set(f.id, newId)
     }
-    folderRepo.create(newId, f.name)
-    // Restore display order with reorder later
-    folderIdMap.set(f.id, newId)
+    // Restore folder order from export
+    folderRepo.reorder(
+      parsed.folders.map((f, i) => ({
+        id: folderIdMap.get(f.id)!,
+        displayOrder: typeof f.displayOrder === 'number' ? f.displayOrder : i
+      }))
+    )
+  } else {
+    // merge: reuse existing folder by name; create if missing
+    const existingByName = new Map<string, string>()
+    for (const ef of folderRepo.list()) existingByName.set(ef.name, ef.id)
+    for (const f of parsed.folders) {
+      const matched = existingByName.get(f.name)
+      if (matched) {
+        folderIdMap.set(f.id, matched)
+      } else {
+        const newId = uuidv4()
+        folderRepo.create(newId, f.name)
+        folderIdMap.set(f.id, newId)
+        existingByName.set(f.name, newId)
+      }
+    }
   }
-  // Restore folder order
-  folderRepo.reorder(
-    parsed.folders.map((f, i) => ({
-      id: folderIdMap.get(f.id)!,
-      displayOrder: typeof f.displayOrder === 'number' ? f.displayOrder : i
-    }))
-  )
+
+  // For merge: skip bookmarks whose URL already exists
+  const existingUrls =
+    mode === 'merge' ? new Set(bookmarkRepo.list().map((b) => b.url)) : new Set<string>()
 
   let bookmarkCount = 0
+  let skipped = 0
   for (const b of parsed.bookmarks ?? []) {
+    const url = (b.url ?? '').trim()
+    if (mode === 'merge' && url && existingUrls.has(url)) {
+      skipped++
+      continue
+    }
+
     const newBookmarkId = uuidv4()
     let iconFilename: string | null = null
     if (b.iconDataUrl) {
@@ -145,18 +171,13 @@ export async function importFromFile(
       newBookmarkId,
       folderId,
       b.name ?? '',
-      b.url ?? '',
+      url,
       b.memo ?? '',
       iconFilename
     )
+    if (url) existingUrls.add(url)
     bookmarkCount++
   }
-  // Restore bookmark order if present
-  const allBookmarks = bookmarkRepo.list()
-  // Recompute order: incoming order is by parsed.bookmarks slice
-  // The list() returns by display_order ascending. Since we just inserted,
-  // they got incrementing orders per folder. That's fine.
-  void allBookmarks
 
-  return { folders: parsed.folders.length, bookmarks: bookmarkCount }
+  return { folders: parsed.folders.length, bookmarks: bookmarkCount, skipped }
 }

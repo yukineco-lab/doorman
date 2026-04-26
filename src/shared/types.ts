@@ -54,6 +54,7 @@ export interface ExportData {
 export interface ImportResult {
   folders: number
   bookmarks: number
+  skipped: number
 }
 
 export interface DoormanAPI {

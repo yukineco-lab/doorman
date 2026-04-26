@@ -58,7 +58,10 @@ export function ImportModal({ onChoose, onClose }: Props): JSX.Element {
           />
           <span>
             <strong>追加 (merge)</strong>
-            <small>既存データを残し、インポート分を新規 ID で追加します</small>
+            <small>
+              インポートデータにのみ存在する URL のブックマークを新規 ID
+              で追加します。フォルダは同名なら既存に合流します。
+            </small>
           </span>
         </label>
         <label className="radio">

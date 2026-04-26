@@ -143,9 +143,15 @@ function App(): JSX.Element {
     try {
       const result = await window.api.importFromFile(mode)
       if (result) {
-        alert(
-          `インポートしました\nフォルダ: ${result.folders} 件\nブックマーク: ${result.bookmarks} 件`
-        )
+        const lines = [
+          'インポートしました',
+          `フォルダ: ${result.folders} 件 (同名は既存に合流)`,
+          `ブックマーク: ${result.bookmarks} 件追加`
+        ]
+        if (mode === 'merge' && result.skipped > 0) {
+          lines.push(`URL 重複でスキップ: ${result.skipped} 件`)
+        }
+        alert(lines.join('\n'))
         await reload()
       }
     } catch (e) {
