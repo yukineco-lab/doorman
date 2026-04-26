@@ -107,6 +107,27 @@ export function BookmarkModal({
       }
     >
       <div className="field">
+        <label className="field__label">URL</label>
+        <input
+          className="field__input"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://..."
+          autoFocus
+        />
+      </div>
+
+      <div className="field">
+        <label className="field__label">略称</label>
+        <input
+          className="field__input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="例: GitHub"
+        />
+      </div>
+
+      <div className="field">
         <label className="field__label">アイコン</label>
         <div className="icon-picker">
           <div className="icon-picker__preview">
@@ -130,27 +151,6 @@ export function BookmarkModal({
             )}
           </div>
         </div>
-      </div>
-
-      <div className="field">
-        <label className="field__label">略称</label>
-        <input
-          className="field__input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="例: GitHub"
-          autoFocus
-        />
-      </div>
-
-      <div className="field">
-        <label className="field__label">URL</label>
-        <input
-          className="field__input"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://..."
-        />
       </div>
 
       <div className="field">
