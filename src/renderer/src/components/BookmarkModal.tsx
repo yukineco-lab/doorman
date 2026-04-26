@@ -113,7 +113,10 @@ export function BookmarkModal({
             {newIconPreview ? (
               <img src={newIconPreview} alt="" />
             ) : (
-              <BookmarkIcon filename={previewIconFilename} />
+              <BookmarkIcon
+                filename={previewIconFilename}
+                version={bookmark?.iconMtime}
+              />
             )}
           </div>
           <div className="icon-picker__actions">

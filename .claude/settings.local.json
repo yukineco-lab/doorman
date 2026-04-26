@@ -24,7 +24,8 @@
       "Bash(powershell.exe -NoProfile -Command '$W=New-Object -ComObject WScript.Shell; $S=$W.CreateShortcut\\(\"$env:USERPROFILE\\\\Desktop\\\\Doorman.lnk\"\\); $S.TargetPath='\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked\\\\Doorman.exe'\\\\''; $S.IconLocation='\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked\\\\Doorman.exe,0'\\\\''; $S.WorkingDirectory='\\\\''C:\\\\work\\\\doorman\\\\dist\\\\win-unpacked'\\\\''; $S.Description='\\\\''Doorman'\\\\''; $S.Save\\(\\); ie4uinit.exe -show; Write-Host '\\\\''done'\\\\''')",
       "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
       "Bash(gh --version)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(git add *)"
     ]
   }
 }

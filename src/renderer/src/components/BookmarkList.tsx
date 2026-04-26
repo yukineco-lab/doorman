@@ -84,7 +84,7 @@ function SortableCard({ bookmark, onOpen, onEdit }: CardProps): JSX.Element {
       {...listeners}
     >
       <span className="bookmark-card__icon">
-        <BookmarkIcon filename={bookmark.iconFilename} />
+        <BookmarkIcon filename={bookmark.iconFilename} version={bookmark.iconMtime} />
       </span>
       <div className="bookmark-card__body">
         <div className="bookmark-card__name">{bookmark.name}</div>

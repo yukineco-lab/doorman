@@ -69,6 +69,7 @@ function rowToBookmark(row: {
     url: row.url,
     memo: row.memo,
     iconFilename: row.icon_filename,
+    iconMtime: null,
     displayOrder: row.display_order
   }
 }
@@ -182,6 +183,7 @@ export const bookmarkRepo = {
       url,
       memo,
       iconFilename,
+      iconMtime: null,
       displayOrder: order
     }
   },

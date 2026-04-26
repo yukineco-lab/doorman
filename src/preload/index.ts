@@ -27,7 +27,10 @@ const api: DoormanAPI = {
 
   openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
   pickIconFile: () => ipcRenderer.invoke('app:pickIconFile'),
-  iconUrl: (filename: string) => `doorman-icon://local/${encodeURIComponent(filename)}`,
+  iconUrl: (filename: string, version?: number | null) => {
+    const base = `doorman-icon://local/${encodeURIComponent(filename)}`
+    return version ? `${base}?v=${version}` : base
+  },
   dataDir: () => ipcRenderer.invoke('app:dataDir')
 }
 

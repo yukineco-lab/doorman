@@ -1,11 +1,21 @@
 import { ipcMain, shell, dialog, protocol, net, BrowserWindow } from 'electron'
 import { pathToFileURL } from 'url'
-import { readFileSync } from 'fs'
+import { readFileSync, statSync } from 'fs'
 import { extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import { bookmarkRepo, folderRepo, getDataDir, initDb } from './db'
 import { deleteIcon, iconPath, importIcon } from './icons'
-import type { BookmarkInput, FolderInput, ReorderItem } from '@shared/types'
+import type { Bookmark, BookmarkInput, FolderInput, ReorderItem } from '@shared/types'
+
+function withIconMtime(b: Bookmark): Bookmark {
+  if (!b.iconFilename) return b
+  try {
+    const st = statSync(iconPath(b.iconFilename))
+    return { ...b, iconMtime: st.mtimeMs }
+  } catch {
+    return b
+  }
+}
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -49,14 +59,14 @@ export function registerIpc(): void {
     folderRepo.reorder(items)
   })
 
-  ipcMain.handle('bookmarks:list', () => bookmarkRepo.list())
+  ipcMain.handle('bookmarks:list', () => bookmarkRepo.list().map(withIconMtime))
   ipcMain.handle('bookmarks:create', (_e, input: BookmarkInput) => {
     const id = uuidv4()
     let iconFilename: string | null = null
     if (input.iconSourcePath) {
       iconFilename = importIcon(input.iconSourcePath, id)
     }
-    return bookmarkRepo.create(
+    const created = bookmarkRepo.create(
       id,
       input.folderId,
       input.name.trim(),
@@ -64,6 +74,7 @@ export function registerIpc(): void {
       input.memo,
       iconFilename
     )
+    return withIconMtime(created)
   })
   ipcMain.handle('bookmarks:update', (_e, id: string, input: BookmarkInput) => {
     const existing = bookmarkRepo.get(id)
@@ -77,7 +88,7 @@ export function registerIpc(): void {
       deleteIcon(existing.iconFilename)
       iconFilename = null
     }
-    return bookmarkRepo.update(
+    const updated = bookmarkRepo.update(
       id,
       input.folderId,
       input.name.trim(),
@@ -85,6 +96,7 @@ export function registerIpc(): void {
       input.memo,
       iconFilename
     )
+    return updated ? withIconMtime(updated) : updated
   })
   ipcMain.handle('bookmarks:delete', (_e, id: string) => {
     const existing = bookmarkRepo.get(id)

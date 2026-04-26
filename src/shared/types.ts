@@ -11,6 +11,7 @@ export interface Bookmark {
   url: string
   memo: string
   iconFilename: string | null
+  iconMtime: number | null
   displayOrder: number
 }
 
@@ -47,6 +48,6 @@ export interface DoormanAPI {
 
   openExternal: (url: string) => Promise<void>
   pickIconFile: () => Promise<{ path: string; dataUrl: string } | null>
-  iconUrl: (filename: string) => string
+  iconUrl: (filename: string, version?: number | null) => string
   dataDir: () => Promise<string>
 }
