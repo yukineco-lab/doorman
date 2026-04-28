@@ -38,7 +38,9 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run ${{ matrix.script }}
+        # `-- --publish never` disables electron-builder's implicit
+        # publish-on-tag behavior; release upload is handled separately below.
+        run: npm run ${{ matrix.script }} -- --publish never
         env:
           # Skip macOS code signing / notarization (open-source unsigned distribution)
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
