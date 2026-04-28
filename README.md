@@ -1,6 +1,13 @@
 # Doorman
 
-1Password 風 UI のブックマーク管理デスクトップアプリ（Electron + React + TypeScript）。
+フォルダとカード形式のミニマルな UI を備えたブックマーク管理アプリ（Electron + React + TypeScript）。
+
+## ダウンロード
+
+最新のインストーラは [Releases](https://github.com/yukineco-lab/doorman/releases/latest) から取得できます。
+
+- Windows: `doorman-x.x.x-setup.exe`
+- macOS: `doorman-x.x.x.dmg` (Intel / Apple Silicon)
 
 ## 特徴
 
