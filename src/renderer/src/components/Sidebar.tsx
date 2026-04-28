@@ -32,6 +32,7 @@ interface Props {
   onReorder: (folders: Folder[]) => void
   onExport: () => void
   onImport: () => void
+  onOpenProfiles: () => void
 }
 
 export function Sidebar({
@@ -46,7 +47,8 @@ export function Sidebar({
   onDeleteFolder,
   onReorder,
   onExport,
-  onImport
+  onImport,
+  onOpenProfiles
 }: Props): JSX.Element {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -100,6 +102,13 @@ export function Sidebar({
         </DndContext>
       </div>
       <div className="sidebar__footer">
+        <button
+          className="btn btn--ghost"
+          onClick={onOpenProfiles}
+          title="ブラウザの起動プロファイルを管理"
+        >
+          起動プロファイル
+        </button>
         <button className="btn btn--ghost" onClick={onExport} title="JSON ファイルにエクスポート">
           エクスポート
         </button>

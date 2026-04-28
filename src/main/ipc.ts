@@ -1,13 +1,20 @@
 import { ipcMain, shell, dialog, protocol, net, BrowserWindow } from 'electron'
 import { pathToFileURL } from 'url'
+import { spawn } from 'child_process'
 import { readFileSync, statSync } from 'fs'
 import { extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import { bookmarkRepo, folderRepo, getDataDir, initDb } from './db'
+import { bookmarkRepo, folderRepo, getDataDir, initDb, launchProfileRepo } from './db'
 import { deleteIcon, iconPath, importIcon, importIconFromDataUrl } from './icons'
 import { fetchPageMeta } from './pageMeta'
 import { exportToFile, importFromFile } from './portability'
-import type { Bookmark, BookmarkInput, FolderInput, ReorderItem } from '@shared/types'
+import type {
+  Bookmark,
+  BookmarkInput,
+  FolderInput,
+  LaunchProfileInput,
+  ReorderItem
+} from '@shared/types'
 
 function withIconMtime(b: Bookmark): Bookmark {
   if (!b.iconFilename) return b
@@ -76,7 +83,8 @@ export function registerIpc(): void {
       input.name.trim(),
       input.url.trim(),
       input.memo,
-      iconFilename
+      iconFilename,
+      input.launchProfileId ?? null
     )
     return withIconMtime(created)
   })
@@ -105,7 +113,8 @@ export function registerIpc(): void {
       input.name.trim(),
       input.url.trim(),
       input.memo,
-      iconFilename
+      iconFilename,
+      input.launchProfileId ?? null
     )
     return updated ? withIconMtime(updated) : updated
   })
@@ -121,7 +130,59 @@ export function registerIpc(): void {
     return bookmarkRepo.move(id, folderId)
   })
 
-  ipcMain.handle('app:openExternal', (_e, url: string) => shell.openExternal(url))
+  ipcMain.handle(
+    'app:openExternal',
+    async (_e, url: string, launchProfileId?: string | null) => {
+      if (launchProfileId) {
+        const profile = launchProfileRepo.get(launchProfileId)
+        if (profile && profile.execPath) {
+          try {
+            const child = spawn(profile.execPath, [...profile.args, url], {
+              detached: true,
+              stdio: 'ignore'
+            })
+            child.unref()
+            return
+          } catch (err) {
+            console.error('Launch profile failed, falling back to default browser:', err)
+          }
+        }
+      }
+      await shell.openExternal(url)
+    }
+  )
+
+  ipcMain.handle('profiles:list', () => launchProfileRepo.list())
+  ipcMain.handle('profiles:create', (_e, input: LaunchProfileInput) => {
+    const id = uuidv4()
+    return launchProfileRepo.create(id, input.name.trim(), input.execPath.trim(), input.args)
+  })
+  ipcMain.handle('profiles:update', (_e, id: string, input: LaunchProfileInput) => {
+    return launchProfileRepo.update(id, input.name.trim(), input.execPath.trim(), input.args)
+  })
+  ipcMain.handle('profiles:delete', (_e, id: string) => {
+    launchProfileRepo.delete(id)
+  })
+  ipcMain.handle('profiles:reorder', (_e, items: ReorderItem[]) => {
+    launchProfileRepo.reorder(items)
+  })
+  ipcMain.handle('app:pickExecutable', async (event) => {
+    const win =
+      BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getFocusedWindow()
+    const options = {
+      title: '実行ファイルを選択',
+      properties: ['openFile' as const],
+      filters: [
+        { name: 'Executable', extensions: ['exe', 'cmd', 'bat'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    }
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
   ipcMain.handle('app:pickIconFile', async (event) => {
     const win =
       BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getFocusedWindow()

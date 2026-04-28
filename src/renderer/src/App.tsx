@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState, type JSX } from 'react'
-import type { Bookmark, BookmarkInput, Folder } from '@shared/types'
+import type { Bookmark, BookmarkInput, Folder, LaunchProfile } from '@shared/types'
 import { Sidebar, type SelectionKey } from './components/Sidebar'
 import { BookmarkList } from './components/BookmarkList'
 import { BookmarkModal } from './components/BookmarkModal'
 import { FolderModal } from './components/FolderModal'
 import { ImportModal } from './components/ImportModal'
+import { LaunchProfilesModal } from './components/LaunchProfilesModal'
 import { IconClose, IconPlus } from './components/Icons'
 
 function App(): JSX.Element {
   const [folders, setFolders] = useState<Folder[]>([])
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
+  const [launchProfiles, setLaunchProfiles] = useState<LaunchProfile[]>([])
   const [selection, setSelection] = useState<SelectionKey>('all')
   const [search, setSearch] = useState('')
 
@@ -20,11 +22,17 @@ function App(): JSX.Element {
     { mode: 'create' } | { mode: 'edit'; folder: Folder } | null
   >(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [profilesOpen, setProfilesOpen] = useState(false)
 
   const reload = async (): Promise<void> => {
-    const [fs, bs] = await Promise.all([window.api.listFolders(), window.api.listBookmarks()])
+    const [fs, bs, ps] = await Promise.all([
+      window.api.listFolders(),
+      window.api.listBookmarks(),
+      window.api.listLaunchProfiles()
+    ])
     setFolders(fs)
     setBookmarks(bs)
+    setLaunchProfiles(ps)
   }
 
   useEffect(() => {
@@ -74,7 +82,7 @@ function App(): JSX.Element {
   const defaultFolderId = selection === 'all' || selection === 'top' ? null : selection
 
   const openBookmark = async (b: Bookmark): Promise<void> => {
-    await window.api.openExternal(b.url)
+    await window.api.openExternal(b.url, b.launchProfileId)
   }
 
   const saveBookmark = async (input: BookmarkInput): Promise<void> => {
@@ -174,6 +182,7 @@ function App(): JSX.Element {
         onReorder={reorderFolders}
         onExport={exportData}
         onImport={() => setImportOpen(true)}
+        onOpenProfiles={() => setProfilesOpen(true)}
       />
       <main className="main">
         <div className="main__header">
@@ -220,6 +229,7 @@ function App(): JSX.Element {
           mode={bookmarkModal.mode}
           bookmark={bookmarkModal.mode === 'edit' ? bookmarkModal.bookmark : undefined}
           folders={folders}
+          launchProfiles={launchProfiles}
           defaultFolderId={defaultFolderId}
           onSave={saveBookmark}
           onDelete={
@@ -240,6 +250,12 @@ function App(): JSX.Element {
       )}
       {importOpen && (
         <ImportModal onChoose={runImport} onClose={() => setImportOpen(false)} />
+      )}
+      {profilesOpen && (
+        <LaunchProfilesModal
+          onChanged={reload}
+          onClose={() => setProfilesOpen(false)}
+        />
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import type {
   BookmarkInput,
   DoormanAPI,
   FolderInput,
+  LaunchProfileInput,
   ReorderItem
 } from '../shared/types'
 
@@ -25,7 +26,18 @@ const api: DoormanAPI = {
   moveBookmark: (id: string, folderId: string | null) =>
     ipcRenderer.invoke('bookmarks:move', id, folderId),
 
-  openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
+  listLaunchProfiles: () => ipcRenderer.invoke('profiles:list'),
+  createLaunchProfile: (input: LaunchProfileInput) =>
+    ipcRenderer.invoke('profiles:create', input),
+  updateLaunchProfile: (id: string, input: LaunchProfileInput) =>
+    ipcRenderer.invoke('profiles:update', id, input),
+  deleteLaunchProfile: (id: string) => ipcRenderer.invoke('profiles:delete', id),
+  reorderLaunchProfiles: (items: ReorderItem[]) =>
+    ipcRenderer.invoke('profiles:reorder', items),
+  pickExecutable: () => ipcRenderer.invoke('app:pickExecutable'),
+
+  openExternal: (url: string, launchProfileId?: string | null) =>
+    ipcRenderer.invoke('app:openExternal', url, launchProfileId ?? null),
   pickIconFile: () => ipcRenderer.invoke('app:pickIconFile'),
   iconUrl: (filename: string, version?: number | null) => {
     const base = `doorman-icon://local/${encodeURIComponent(filename)}`

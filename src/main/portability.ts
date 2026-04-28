@@ -2,7 +2,7 @@ import { dialog, BrowserWindow } from 'electron'
 import { writeFileSync, readFileSync, writeFileSync as writeBuf } from 'fs'
 import { extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import { bookmarkRepo, folderRepo } from './db'
+import { bookmarkRepo, folderRepo, launchProfileRepo } from './db'
 import { iconPath, deleteIcon } from './icons'
 import type { ExportData, ImportResult } from '@shared/types'
 
@@ -61,10 +61,12 @@ export async function exportToFile(parent: BrowserWindow | null): Promise<string
 
   const folders = folderRepo.list()
   const bookmarks = bookmarkRepo.list()
+  const profiles = launchProfileRepo.list()
   const data: ExportData = {
     version: 1,
     exportedAt: new Date().toISOString(),
     folders,
+    profiles,
     bookmarks: bookmarks.map((b) => ({
       ...b,
       iconDataUrl: b.iconFilename ? readIconAsDataUrl(b.iconFilename) : null
@@ -99,12 +101,39 @@ export async function importFromFile(
     throw new Error('Doorman エクスポート形式ではありません')
   }
 
-  // Replace mode: clear existing data + icons
+  // Replace mode: clear existing data + icons + profiles
   if (mode === 'replace') {
     const existing = bookmarkRepo.list()
     for (const b of existing) deleteIcon(b.iconFilename)
     for (const b of existing) bookmarkRepo.delete(b.id)
     for (const f of folderRepo.list()) folderRepo.delete(f.id)
+    for (const p of launchProfileRepo.list()) launchProfileRepo.delete(p.id)
+  }
+
+  // Map old (export-side) profile id -> new (db) profile id
+  const profileIdMap = new Map<string, string>()
+  const incomingProfiles = parsed.profiles ?? []
+  if (mode === 'replace') {
+    for (const p of incomingProfiles) {
+      const newId = uuidv4()
+      launchProfileRepo.create(newId, p.name, p.execPath, p.args ?? [])
+      profileIdMap.set(p.id, newId)
+    }
+  } else {
+    // merge: reuse existing profile by name
+    const existingByName = new Map<string, string>()
+    for (const ep of launchProfileRepo.list()) existingByName.set(ep.name, ep.id)
+    for (const p of incomingProfiles) {
+      const matched = existingByName.get(p.name)
+      if (matched) {
+        profileIdMap.set(p.id, matched)
+      } else {
+        const newId = uuidv4()
+        launchProfileRepo.create(newId, p.name, p.execPath, p.args ?? [])
+        profileIdMap.set(p.id, newId)
+        existingByName.set(p.name, newId)
+      }
+    }
   }
 
   // Map old (export-side) folder id -> new (db) folder id
@@ -167,13 +196,17 @@ export async function importFromFile(
       }
     }
     const folderId = b.folderId ? folderIdMap.get(b.folderId) ?? null : null
+    const launchProfileId = b.launchProfileId
+      ? profileIdMap.get(b.launchProfileId) ?? null
+      : null
     bookmarkRepo.create(
       newBookmarkId,
       folderId,
       b.name ?? '',
       url,
       b.memo ?? '',
-      iconFilename
+      iconFilename,
+      launchProfileId
     )
     if (url) existingUrls.add(url)
     bookmarkCount++

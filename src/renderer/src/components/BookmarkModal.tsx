@@ -1,5 +1,11 @@
 import { useState, type JSX } from 'react'
-import type { Bookmark, BookmarkInput, Folder, IconChange } from '@shared/types'
+import type {
+  Bookmark,
+  BookmarkInput,
+  Folder,
+  IconChange,
+  LaunchProfile
+} from '@shared/types'
 import { Modal } from './Modal'
 import { BookmarkIcon } from './BookmarkIcon'
 
@@ -7,6 +13,7 @@ interface Props {
   mode: 'create' | 'edit'
   bookmark?: Bookmark
   folders: Folder[]
+  launchProfiles: LaunchProfile[]
   defaultFolderId: string | null
   onSave: (input: BookmarkInput) => Promise<void>
   onDelete?: () => Promise<void>
@@ -17,6 +24,7 @@ export function BookmarkModal({
   mode,
   bookmark,
   folders,
+  launchProfiles,
   defaultFolderId,
   onSave,
   onDelete,
@@ -27,6 +35,9 @@ export function BookmarkModal({
   const [memo, setMemo] = useState(bookmark?.memo ?? '')
   const [folderId, setFolderId] = useState<string | null>(
     bookmark ? bookmark.folderId : defaultFolderId
+  )
+  const [launchProfileId, setLaunchProfileId] = useState<string | null>(
+    bookmark?.launchProfileId ?? null
   )
   const [iconFilename, setIconFilename] = useState<string | null>(bookmark?.iconFilename ?? null)
   const [pendingIcon, setPendingIcon] = useState<
@@ -103,7 +114,8 @@ export function BookmarkModal({
         name,
         url,
         memo,
-        iconChange
+        iconChange,
+        launchProfileId
       })
       onClose()
     } finally {
@@ -224,6 +236,29 @@ export function BookmarkModal({
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="field">
+        <label className="field__label">起動方法</label>
+        <select
+          className="field__select"
+          value={launchProfileId ?? ''}
+          onChange={(e) =>
+            setLaunchProfileId(e.target.value === '' ? null : e.target.value)
+          }
+        >
+          <option value="">既定のブラウザ</option>
+          {launchProfiles.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        {launchProfiles.length === 0 && (
+          <div className="field__hint">
+            起動プロファイルはサイドバー下部の「起動プロファイル」から登録できます
+          </div>
+        )}
       </div>
 
       <div className="field">

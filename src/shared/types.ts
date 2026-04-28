@@ -4,6 +4,20 @@ export interface Folder {
   displayOrder: number
 }
 
+export interface LaunchProfile {
+  id: string
+  name: string
+  execPath: string
+  args: string[]
+  displayOrder: number
+}
+
+export interface LaunchProfileInput {
+  name: string
+  execPath: string
+  args: string[]
+}
+
 export interface Bookmark {
   id: string
   folderId: string | null
@@ -12,6 +26,7 @@ export interface Bookmark {
   memo: string
   iconFilename: string | null
   iconMtime: number | null
+  launchProfileId: string | null
   displayOrder: number
 }
 
@@ -27,6 +42,7 @@ export interface BookmarkInput {
   url: string
   memo: string
   iconChange: IconChange
+  launchProfileId: string | null
 }
 
 export interface FolderInput {
@@ -48,6 +64,7 @@ export interface ExportData {
   version: 1
   exportedAt: string
   folders: Folder[]
+  profiles?: LaunchProfile[]
   bookmarks: Array<Bookmark & { iconDataUrl?: string | null }>
 }
 
@@ -71,7 +88,14 @@ export interface DoormanAPI {
   reorderBookmarks: (items: ReorderItem[]) => Promise<void>
   moveBookmark: (id: string, folderId: string | null) => Promise<Bookmark>
 
-  openExternal: (url: string) => Promise<void>
+  listLaunchProfiles: () => Promise<LaunchProfile[]>
+  createLaunchProfile: (input: LaunchProfileInput) => Promise<LaunchProfile>
+  updateLaunchProfile: (id: string, input: LaunchProfileInput) => Promise<LaunchProfile>
+  deleteLaunchProfile: (id: string) => Promise<void>
+  reorderLaunchProfiles: (items: ReorderItem[]) => Promise<void>
+  pickExecutable: () => Promise<string | null>
+
+  openExternal: (url: string, launchProfileId?: string | null) => Promise<void>
   pickIconFile: () => Promise<{ path: string; dataUrl: string } | null>
   iconUrl: (filename: string, version?: number | null) => string
   dataDir: () => Promise<string>

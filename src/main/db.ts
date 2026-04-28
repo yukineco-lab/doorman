@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import { join } from 'path'
 import { mkdirSync } from 'fs'
-import type { Bookmark, Folder, ReorderItem } from '@shared/types'
+import type { Bookmark, Folder, LaunchProfile, ReorderItem } from '@shared/types'
 
 let db: Database.Database | null = null
 
@@ -41,7 +41,23 @@ export function initDb(): Database.Database {
       FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE SET NULL
     );
     CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folder_id);
+    CREATE TABLE IF NOT EXISTS launch_profiles (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      exec_path TEXT NOT NULL,
+      args_json TEXT NOT NULL DEFAULT '[]',
+      display_order INTEGER NOT NULL DEFAULT 0
+    );
   `)
+
+  // Migration: add launch_profile_id to bookmarks if missing
+  const cols = db.prepare("PRAGMA table_info(bookmarks)").all() as Array<{ name: string }>
+  if (!cols.some((c) => c.name === 'launch_profile_id')) {
+    db.exec(
+      "ALTER TABLE bookmarks ADD COLUMN launch_profile_id TEXT REFERENCES launch_profiles(id) ON DELETE SET NULL"
+    )
+  }
+
   return db
 }
 
@@ -60,6 +76,7 @@ function rowToBookmark(row: {
   url: string
   memo: string
   icon_filename: string | null
+  launch_profile_id: string | null
   display_order: number
 }): Bookmark {
   return {
@@ -70,6 +87,30 @@ function rowToBookmark(row: {
     memo: row.memo,
     iconFilename: row.icon_filename,
     iconMtime: null,
+    launchProfileId: row.launch_profile_id,
+    displayOrder: row.display_order
+  }
+}
+
+function rowToLaunchProfile(row: {
+  id: string
+  name: string
+  exec_path: string
+  args_json: string
+  display_order: number
+}): LaunchProfile {
+  let args: string[] = []
+  try {
+    const parsed = JSON.parse(row.args_json)
+    if (Array.isArray(parsed)) args = parsed.filter((x) => typeof x === 'string')
+  } catch {
+    // ignore
+  }
+  return {
+    id: row.id,
+    name: row.name,
+    execPath: row.exec_path,
+    args,
     displayOrder: row.display_order
   }
 }
@@ -126,7 +167,7 @@ export const bookmarkRepo = {
     const d = initDb()
     const rows = d
       .prepare(
-        'SELECT id, folder_id, name, url, memo, icon_filename, display_order FROM bookmarks ORDER BY display_order ASC'
+        'SELECT id, folder_id, name, url, memo, icon_filename, launch_profile_id, display_order FROM bookmarks ORDER BY display_order ASC'
       )
       .all() as Array<{
       id: string
@@ -135,6 +176,7 @@ export const bookmarkRepo = {
       url: string
       memo: string
       icon_filename: string | null
+      launch_profile_id: string | null
       display_order: number
     }>
     return rows.map(rowToBookmark)
@@ -143,7 +185,7 @@ export const bookmarkRepo = {
     const d = initDb()
     const row = d
       .prepare(
-        'SELECT id, folder_id, name, url, memo, icon_filename, display_order FROM bookmarks WHERE id = ?'
+        'SELECT id, folder_id, name, url, memo, icon_filename, launch_profile_id, display_order FROM bookmarks WHERE id = ?'
       )
       .get(id) as
       | {
@@ -153,6 +195,7 @@ export const bookmarkRepo = {
           url: string
           memo: string
           icon_filename: string | null
+          launch_profile_id: string | null
           display_order: number
         }
       | undefined
@@ -164,7 +207,8 @@ export const bookmarkRepo = {
     name: string,
     url: string,
     memo: string,
-    iconFilename: string | null
+    iconFilename: string | null,
+    launchProfileId: string | null
   ): Bookmark {
     const d = initDb()
     const maxOrder = (d
@@ -174,8 +218,8 @@ export const bookmarkRepo = {
       .get(folderId) as { m: number }).m
     const order = maxOrder + 1
     d.prepare(
-      'INSERT INTO bookmarks (id, folder_id, name, url, memo, icon_filename, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(id, folderId, name, url, memo, iconFilename, order)
+      'INSERT INTO bookmarks (id, folder_id, name, url, memo, icon_filename, launch_profile_id, display_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, folderId, name, url, memo, iconFilename, launchProfileId, order)
     return {
       id,
       folderId,
@@ -184,6 +228,7 @@ export const bookmarkRepo = {
       memo,
       iconFilename,
       iconMtime: null,
+      launchProfileId,
       displayOrder: order
     }
   },
@@ -193,12 +238,13 @@ export const bookmarkRepo = {
     name: string,
     url: string,
     memo: string,
-    iconFilename: string | null
+    iconFilename: string | null,
+    launchProfileId: string | null
   ): Bookmark | null {
     const d = initDb()
     d.prepare(
-      'UPDATE bookmarks SET folder_id = ?, name = ?, url = ?, memo = ?, icon_filename = ? WHERE id = ?'
-    ).run(folderId, name, url, memo, iconFilename, id)
+      'UPDATE bookmarks SET folder_id = ?, name = ?, url = ?, memo = ?, icon_filename = ?, launch_profile_id = ? WHERE id = ?'
+    ).run(folderId, name, url, memo, iconFilename, launchProfileId, id)
     return this.get(id)
   },
   delete(id: string): void {
@@ -226,5 +272,64 @@ export const bookmarkRepo = {
       id
     )
     return this.get(id)
+  }
+}
+
+export const launchProfileRepo = {
+  list(): LaunchProfile[] {
+    const d = initDb()
+    const rows = d
+      .prepare(
+        'SELECT id, name, exec_path, args_json, display_order FROM launch_profiles ORDER BY display_order ASC'
+      )
+      .all() as Array<{
+      id: string
+      name: string
+      exec_path: string
+      args_json: string
+      display_order: number
+    }>
+    return rows.map(rowToLaunchProfile)
+  },
+  get(id: string): LaunchProfile | null {
+    const d = initDb()
+    const row = d
+      .prepare(
+        'SELECT id, name, exec_path, args_json, display_order FROM launch_profiles WHERE id = ?'
+      )
+      .get(id) as
+      | { id: string; name: string; exec_path: string; args_json: string; display_order: number }
+      | undefined
+    return row ? rowToLaunchProfile(row) : null
+  },
+  create(id: string, name: string, execPath: string, args: string[]): LaunchProfile {
+    const d = initDb()
+    const maxOrder = (d
+      .prepare('SELECT COALESCE(MAX(display_order), -1) AS m FROM launch_profiles')
+      .get() as { m: number }).m
+    const order = maxOrder + 1
+    d.prepare(
+      'INSERT INTO launch_profiles (id, name, exec_path, args_json, display_order) VALUES (?, ?, ?, ?, ?)'
+    ).run(id, name, execPath, JSON.stringify(args), order)
+    return { id, name, execPath, args, displayOrder: order }
+  },
+  update(id: string, name: string, execPath: string, args: string[]): LaunchProfile | null {
+    const d = initDb()
+    d.prepare(
+      'UPDATE launch_profiles SET name = ?, exec_path = ?, args_json = ? WHERE id = ?'
+    ).run(name, execPath, JSON.stringify(args), id)
+    return this.get(id)
+  },
+  delete(id: string): void {
+    const d = initDb()
+    d.prepare('DELETE FROM launch_profiles WHERE id = ?').run(id)
+  },
+  reorder(items: ReorderItem[]): void {
+    const d = initDb()
+    const stmt = d.prepare('UPDATE launch_profiles SET display_order = ? WHERE id = ?')
+    const tx = d.transaction((list: ReorderItem[]) => {
+      for (const it of list) stmt.run(it.displayOrder, it.id)
+    })
+    tx(items)
   }
 }
