@@ -192,6 +192,45 @@
         margin: 12px 0;
         font-size: 14px;
       }
+      .screenshot {
+        margin: 20px 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 24px rgba(42, 34, 24, 0.12);
+        background: var(--bg-elev-2);
+      }
+      .screenshot img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .screenshot--hero {
+        margin: 32px 0 0;
+        max-width: 720px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .screenshot__caption {
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 8px;
+      }
+      .screenshot-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 20px 0;
+      }
+      .screenshot-pair .screenshot {
+        margin: 0;
+      }
+      @media (max-width: 700px) {
+        .screenshot-pair {
+          grid-template-columns: 1fr;
+        }
+      }
       footer {
         text-align: center;
         padding: 40px 24px 56px;
@@ -246,6 +285,9 @@
           </a>
         </div>
         <p class="version-line" id="version-line">最新版を取得中…</p>
+        <figure class="screenshot screenshot--hero">
+          <img src="/screenshots/main-window.png" alt="Doorman メインウィンドウ" loading="lazy" />
+        </figure>
       </div>
     </header>
 
@@ -286,19 +328,30 @@
         <h2>使い方</h2>
         <ol class="steps">
           <li>上の <strong>「ダウンロード」</strong> から OS に合ったインストーラを取得して実行します。</li>
-          <li>初回起動時は空の状態です。右上の <strong>「追加」</strong> ボタンからブックマークを登録します。</li>
+          <li>初回起動時は空の状態です。右上の <strong>「+ 追加」</strong> ボタンからブックマークを登録します。</li>
           <li>URL 欄にアドレスを貼り付け、<strong>「URL から取得」</strong> でタイトルとアイコンを自動入力できます。</li>
-          <li>必要に応じてサイドバー上部 <strong>「＋」</strong> でフォルダを作り、ブックマークを分類します。</li>
+          <li>必要に応じてサイドバー上部 <strong>「+」</strong> でフォルダを作り、ブックマークを分類します。</li>
           <li>カードをクリックすると既定のブラウザでサイトが開きます。</li>
         </ol>
 
-        <h3 style="margin-top:32px">ブラウザのプロファイル切替（応用）</h3>
+        <figure class="screenshot">
+          <img
+            src="/screenshots/bookmark-default.png"
+            alt="ブックマーク登録画面（既定のブラウザ）"
+            loading="lazy"
+          />
+          <figcaption class="screenshot__caption">
+            ブックマーク登録画面（起動方法 = 既定のブラウザ）
+          </figcaption>
+        </figure>
+
+        <h3 style="margin-top:48px">ブラウザのプロファイル切替（応用）</h3>
         <p>
           同じサイト（例: Amazon）を Chrome の個人アカウントと仕事アカウントで使い分けたい場合、サイドバー下部
           <strong>「起動プロファイル」</strong> を活用します。
         </p>
         <ol class="steps">
-          <li>「起動プロファイル」→「追加」で表示名・実行ファイル・引数を登録します。</li>
+          <li>「起動プロファイル」→「+ 追加」で表示名・実行ファイル・引数を登録します。</li>
           <li>
             実行ファイルは Chrome の <code>chrome.exe</code> を指定し、引数に
             <code>--profile-directory=Default</code> や
@@ -306,6 +359,44 @@
           </li>
           <li>ブックマーク追加時、<strong>「起動方法」</strong> で作成したプロファイルを選びます。</li>
         </ol>
+
+        <figure class="screenshot">
+          <img
+            src="/screenshots/launch-profiles.png"
+            alt="起動プロファイル一覧画面"
+            loading="lazy"
+          />
+          <figcaption class="screenshot__caption">
+            起動プロファイル一覧。Chrome の引数を 1 行ずつ登録する
+          </figcaption>
+        </figure>
+
+        <p style="margin-top:24px">
+          同じ URL のブックマークを 2 つ作り、起動方法だけ違うプロファイルを指定すれば、用途別に開き分けられます。
+        </p>
+        <div class="screenshot-pair">
+          <figure class="screenshot">
+            <img
+              src="/screenshots/bookmark-default.png"
+              alt="既定のブラウザで開くブックマーク"
+              loading="lazy"
+            />
+            <figcaption class="screenshot__caption">
+              Amazon（私用）— 起動方法: 既定のブラウザ
+            </figcaption>
+          </figure>
+          <figure class="screenshot">
+            <img
+              src="/screenshots/bookmark-with-profile.png"
+              alt="プロファイル指定で開くブックマーク"
+              loading="lazy"
+            />
+            <figcaption class="screenshot__caption">
+              Amazon（仕事）— 起動方法: Chrome - 仕事
+            </figcaption>
+          </figure>
+        </div>
+
         <div class="note">
           ヒント: Chrome のプロファイルディレクトリ名は、Chrome の URL バーに <code>chrome://version</code> を入力して
           表示される「プロフィールパス」末尾のフォルダ名と一致します。
