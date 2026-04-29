@@ -19,6 +19,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Ensure Pages project exists
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          response=$(curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"doorman","production_branch":"main"}')
+          echo "$response" | grep -q '"success":true' && echo "✅ Project created" && exit 0
+          # Already-exists is fine
+          if echo "$response" | grep -qE 'already|exists|8000009|8000038|8000010'; then
+            echo "ℹ️  Project already exists — continuing"
+            exit 0
+          fi
+          echo "❌ Failed to ensure project:"
+          echo "$response"
+          exit 1
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
