@@ -39,7 +39,9 @@
       "Bash(cp \"C:/Users/kato_/Desktop/キャプチャ/メインウィンドウ.png\" \"C:/work/doorman/site/screenshots/main-window.png\")",
       "Bash(cp \"C:/Users/kato_/Desktop/キャプチャ/起動プロファイルを指定しないブックマーク登録例.png\" \"C:/work/doorman/site/screenshots/bookmark-default.png\")",
       "Bash(cp \"C:/Users/kato_/Desktop/キャプチャ/起動プロファイルを指定したブックマーク登録例.png\" \"C:/work/doorman/site/screenshots/bookmark-with-profile.png\")",
-      "Bash(cp \"C:/Users/kato_/Desktop/キャプチャ/起動プロファイル一覧画面.png\" \"C:/work/doorman/site/screenshots/launch-profiles.png\")"
+      "Bash(cp \"C:/Users/kato_/Desktop/キャプチャ/起動プロファイル一覧画面.png\" \"C:/work/doorman/site/screenshots/launch-profiles.png\")",
+      "Bash(curl -s \"https://doorman-5hh.pages.dev/\")",
+      "Bash(curl -s -o /tmp/deployed-main.png \"https://doorman-5hh.pages.dev/screenshots/main-window.png\")"
     ]
   }
 }
