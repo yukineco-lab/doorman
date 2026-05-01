@@ -94,6 +94,7 @@ export interface DoormanAPI {
   deleteLaunchProfile: (id: string) => Promise<void>
   reorderLaunchProfiles: (items: ReorderItem[]) => Promise<void>
   pickExecutable: () => Promise<string | null>
+  detectChromePath: () => Promise<string | null>
 
   openExternal: (url: string, launchProfileId?: string | null) => Promise<void>
   pickIconFile: () => Promise<{ path: string; dataUrl: string } | null>

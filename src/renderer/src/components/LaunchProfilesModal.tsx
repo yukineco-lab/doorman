@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import type { LaunchProfile } from '@shared/types'
 import { Modal } from './Modal'
 import { IconEdit, IconPlus, IconTrash } from './Icons'
@@ -135,14 +135,40 @@ function ProfileEditor({
   onCancel,
   onClose
 }: EditorProps): JSX.Element {
-  const [name, setName] = useState(profile?.name ?? '')
+  const isCreate = mode === 'create'
+  const [name, setName] = useState(profile?.name ?? (isCreate ? 'Chrome - ' : ''))
   const [execPath, setExecPath] = useState(profile?.execPath ?? '')
-  const [argsText, setArgsText] = useState((profile?.args ?? []).join('\n'))
+  const [argsText, setArgsText] = useState(
+    (profile?.args ?? (isCreate ? ['--profile-directory=Default'] : [])).join('\n')
+  )
   const [saving, setSaving] = useState(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  // Detect Chrome path on first open (create mode only)
+  useEffect(() => {
+    if (!isCreate || execPath) return
+    let cancelled = false
+    window.api.detectChromePath().then((p) => {
+      if (!cancelled && p) setExecPath((cur) => cur || p)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const pickExe = async (): Promise<void> => {
     const p = await window.api.pickExecutable()
     if (p) setExecPath(p)
+  }
+
+  const focusNameSuffix = (): void => {
+    const el = nameInputRef.current
+    if (el) {
+      el.focus()
+      const len = el.value.length
+      el.setSelectionRange(len, len)
+    }
   }
 
   const save = async (): Promise<void> => {
@@ -189,11 +215,13 @@ function ProfileEditor({
       <div className="field">
         <label className="field__label">表示名</label>
         <input
+          ref={nameInputRef}
           className="field__input"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="例: Chrome - 個人"
           autoFocus
+          onFocus={focusNameSuffix}
         />
       </div>
       <div className="field">
@@ -220,7 +248,13 @@ function ProfileEditor({
         />
         <div className="field__hint">
           例: <code>--profile-directory=Profile 8</code>{' '}
-          を 1 行に書く（クォートは不要です）
+          を 1 行に書きます（クォート不要）。
+          <br />
+          Chrome のプロファイルディレクトリ名は、Chrome の URL バーに{' '}
+          <code>chrome://version</code> を入力して表示される「プロフィール
+          パス」の末尾フォルダ名（例:{' '}
+          <code>Default</code>, <code>Profile 1</code>, <code>Profile 8</code>{' '}
+          など）です。
         </div>
       </div>
     </Modal>

@@ -1,7 +1,7 @@
 import { ipcMain, shell, dialog, protocol, net, BrowserWindow } from 'electron'
 import { pathToFileURL } from 'url'
 import { spawn } from 'child_process'
-import { readFileSync, statSync } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 import { extname } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import { bookmarkRepo, folderRepo, getDataDir, initDb, launchProfileRepo } from './db'
@@ -166,6 +166,19 @@ export function registerIpc(): void {
   ipcMain.handle('profiles:reorder', (_e, items: ReorderItem[]) => {
     launchProfileRepo.reorder(items)
   })
+  ipcMain.handle('app:detectChromePath', () => {
+    const candidates = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      `${process.env.LOCALAPPDATA ?? ''}\\Google\\Chrome\\Application\\chrome.exe`,
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    ]
+    for (const p of candidates) {
+      if (p && existsSync(p)) return p
+    }
+    return null
+  })
+
   ipcMain.handle('app:pickExecutable', async (event) => {
     const win =
       BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getFocusedWindow()

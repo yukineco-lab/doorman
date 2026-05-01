@@ -35,6 +35,7 @@ const api: DoormanAPI = {
   reorderLaunchProfiles: (items: ReorderItem[]) =>
     ipcRenderer.invoke('profiles:reorder', items),
   pickExecutable: () => ipcRenderer.invoke('app:pickExecutable'),
+  detectChromePath: () => ipcRenderer.invoke('app:detectChromePath'),
 
   openExternal: (url: string, launchProfileId?: string | null) =>
     ipcRenderer.invoke('app:openExternal', url, launchProfileId ?? null),
