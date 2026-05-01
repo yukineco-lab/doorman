@@ -1,6 +1,6 @@
 {
   "name": "doorman",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bookmark manager with a 1Password-like UI",
   "main": "./out/main/index.js",
   "author": "",
