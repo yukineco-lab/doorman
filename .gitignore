@@ -5,3 +5,5 @@ out
 .eslintcache
 *.log*
 build/.icon-tmp
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
